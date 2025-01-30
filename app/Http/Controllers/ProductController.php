@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
+use App\Http\Requests\StoreProduct;
+
 use App\Models\Product;
 
 class ProductController extends Controller
@@ -22,8 +23,29 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
         return view('products.show', [
-        'product'=>$product,
+            'product' => $product,
         ]);
     }
 
+    public function create()
+    {
+        return view('products.create');
+    }
+
+    public function edit($id)
+    {
+        $product = Product::findOrFail($id);
+        return view('products.edit', ['product' => $product]);
+    }
+
+    public function store(StoreProduct $request)
+    {
+        $validatedData = $request->validated();
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('products_images');
+            $validatedData['image'] = $imagePath;
+        }
+        Product::create($validatedData);
+        return redirect()->route('products.index')->with('success', 'Product created successfully.');
+    }
 }

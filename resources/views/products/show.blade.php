@@ -8,7 +8,7 @@
                     <div class="row g-4 align-items-center">
                         <!-- Product Image on the Left -->
                         <div class="col-md-5">
-                            <img src="{{ asset('storage/mystery_box.jpeg') }}" class="img-fluid rounded" alt="{{ $product->name }}">
+                            <img src="{{ asset('storage/' . $product->image) }}" class="img-fluid rounded" alt="{{ $product->name }}">
                         </div>
 
                         <!-- Product Details on the Right -->
