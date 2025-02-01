@@ -13,7 +13,8 @@ class ProductController extends Controller
     {
 
         $products = Product::all();
-        return view('products.index', [
+        return view('products.index',
+        [
             'products' => $products,
 
         ]);
@@ -22,7 +23,8 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = Product::findOrFail($id);
-        return view('products.show', [
+        return view('products.show',
+        [
             'product' => $product,
         ]);
     }

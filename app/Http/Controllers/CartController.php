@@ -2,83 +2,107 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\Product;
+
 
 class CartController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function index()
     {
-        //
+        return view('cart.index', [
+            'items' => $this->getUserCartItems(1),
+            'totalPrice' => $this->getUserCartTotal(1),
+        ]);
+    }
+
+    private function getUserCartItems($userId)
+    {
+        $cart = Cart::where('user_id', $userId)->first();
+
+        if ($cart) {
+            return $cart->items;
+        }
+
+        return collect();
     }
 
     /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
+     * Get the cart total for the authenticated user.
      */
-    public function create()
+    private function getUserCartTotal($userId)
     {
-        //
+        $cart = Cart::where('user_id', $userId)->first();
+
+        return $cart ? $cart->total : 0;
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
+
+    public function addToCart($productId)
     {
-        //
+        $userId = 1;
+
+        DB::beginTransaction();
+
+        try {
+            $cart = $this->getOrCreateCart($userId);
+            $this->addOrUpdateCartItem($cart, $productId);
+            $this->updateCartTotal($cart);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Product added to cart successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()->with('error', 'Failed to add product to cart: ' . $e->getMessage());
+        }
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
+    // Find or create a cart for the user.
+
+    private function getOrCreateCart($userId)
     {
-        //
+        return Cart::updateOrCreate(
+            ['user_id' => $userId],
+            ['total' => 0]
+        );
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
+    // Add or update a cart item for the given product.
+
+    private function addOrUpdateCartItem($cart, $productId)
     {
-        //
+        $cartItem = CartItem::where('cart_id', $cart->id)
+            ->where('product_id', $productId)
+            ->first();
+
+        if ($cartItem) {
+            $cartItem->increment('quantity');
+        } else {
+            CartItem::create([
+                'cart_id' => $cart->id,
+                'product_id' => $productId,
+                'quantity' => 1,
+            ]);
+        }
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
+
+    // Recalculate and update the cart total.
+    private function updateCartTotal($cart)
     {
-        //
+        $total = CartItem::where('cart_id', $cart->id)
+            ->join('products', 'cart_items.product_id', '=', 'products.id')
+            ->selectRaw('SUM(cart_items.quantity * products.price) as total')
+            ->value('total');
+
+        $cart->total = $total ?? 0;
+        $cart->save();
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
-    }
+
 }

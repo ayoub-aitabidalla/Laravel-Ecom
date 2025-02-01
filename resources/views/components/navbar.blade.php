@@ -20,10 +20,10 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link position-relative" href="#">
+                        <a class="nav-link position-relative" href="{{ route('shoppingcart.index')}}">
                             <i class="fas fa-shopping-cart"></i>
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                3
+                               {{$cartIems}}
                             </span>
                         </a>
                     </li>
